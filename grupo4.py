@@ -8,43 +8,43 @@ ctk.set_appearance_mode("Dark")  # Modos: "Dark", "Light"
 ctk.set_default_color_theme("blue")  # Temas: "blue", "green", "dark-blue"
 
 # Funções de controle
-current_song = None
-player_running = False
+musica_atual = None
+player_ativo = False
 
-def load_music():
-    global current_song
-    file_path = filedialog.askopenfilename(filetypes=[("Audio Files", "*.mp3 *.wav")])
-    if file_path:
-        current_song = file_path
-        song_listbox.insert("end", file_path.split("/")[-1])
-        status_label.configure(text=f"Loaded: {file_path.split('/')[-1]}")
+def carregar_musica():
+    global musica_atual
+    caminho_arquivo = filedialog.askopenfilename(filetypes=[("Arquivos de Áudio", "*.mp3 *.wav")])
+    if caminho_arquivo:
+        musica_atual = caminho_arquivo
+        lista_musicas.insert("end", caminho_arquivo.split("/")[-1])
+        status_label.configure(text=f"Carregado: {caminho_arquivo.split('/')[-1]}")
 
-def play_music():
-    global player_running
-    if current_song:
-        stop_music()  # Garantir que nenhuma música anterior esteja a ser tocada
-        os.system(f"start {current_song}")
-        player_running = True
-        status_label.configure(text=f"Playing: {current_song.split('/')[-1]}")
+def tocar_musica():
+    global player_ativo
+    if musica_atual:
+        parar_musica()  # Garantir que nenhuma música anterior esteja a tocar
+        os.system(f"start {musica_atual}")
+        player_ativo = True
+        status_label.configure(text=f"Tocando: {musica_atual.split('/')[-1]}")
     else:
-        messagebox.showwarning("No song selected", "Please load a song to play.")
+        messagebox.showwarning("Nenhuma música selecionada", "Por favor, carregue uma música para tocar.")
 
-def pause_music():
-    messagebox.showinfo("Pause", "Pausing music is not supported with this method.")
+def pausar_musica():
+    messagebox.showinfo("Pausar", "Pausar música não é suportado com este método.")
 
-def resume_music():
-    messagebox.showinfo("Resume", "Resuming music is not supported with this method.")
+def retomar_musica():
+    messagebox.showinfo("Retomar", "Retomar música não é suportado com este método.")
 
-def stop_music():
-    global player_running
-    if player_running:
+def parar_musica():
+    global player_ativo
+    if player_ativo:
         os.system("taskkill /im wmplayer.exe /f")  # Para o Windows Media Player
-        player_running = False
-    status_label.configure(text="Stopped")
+        player_ativo = False
+    status_label.configure(text="Parado")
 
 # Janela principal
 app = ctk.CTk()
-app.title("Music Manager")
+app.title("Gerenciador de Música")
 app.geometry("800x600")
 
 # Frame lateral (menu)
@@ -54,48 +54,48 @@ menu_frame.pack(side="left", fill="y")
 menu_label = ctk.CTkLabel(menu_frame, text="Menu", font=("Arial", 20, "bold"))
 menu_label.pack(pady=20)
 
-btn_library = ctk.CTkButton(menu_frame, text="Library", width=180, command=load_music)
-btn_library.pack(pady=10)
+btn_biblioteca = ctk.CTkButton(menu_frame, text="Biblioteca", width=180, command=carregar_musica)
+btn_biblioteca.pack(pady=10)
 
 btn_playlists = ctk.CTkButton(menu_frame, text="Playlists", width=180)
 btn_playlists.pack(pady=10)
 
-btn_settings = ctk.CTkButton(menu_frame, text="Settings", width=180)
-btn_settings.pack(pady=10)
+btn_configuracoes = ctk.CTkButton(menu_frame, text="Configurações", width=180)
+btn_configuracoes.pack(pady=10)
 
 # Frame principal (conteúdo)
-content_frame = ctk.CTkFrame(app)
-content_frame.pack(side="left", fill="both", expand=True, padx=10, pady=10)
+conteudo_frame = ctk.CTkFrame(app)
+conteudo_frame.pack(side="left", fill="both", expand=True, padx=10, pady=10)
 
-content_label = ctk.CTkLabel(content_frame, text="Now Playing", font=("Arial", 24, "bold"))
-content_label.pack(pady=10)
+conteudo_label = ctk.CTkLabel(conteudo_frame, text="Tocando Agora", font=("Arial", 24, "bold"))
+conteudo_label.pack(pady=10)
 
-song_listbox = ctk.CTkTextbox(content_frame, height=300)
-song_listbox.pack(fill="both", expand=True, pady=10)
-song_listbox.insert("1.0", "Load songs to display here")
+lista_musicas = ctk.CTkTextbox(conteudo_frame, height=300)
+lista_musicas.pack(fill="both", expand=True, pady=10)
+lista_musicas.insert("1.0", "Carregue músicas para exibir aqui")
 
-status_label = ctk.CTkLabel(content_frame, text="Status: Idle", font=("Arial", 16))
+status_label = ctk.CTkLabel(conteudo_frame, text="Status: Ocioso", font=("Arial", 16))
 status_label.pack(pady=10)
 
 # Barra inferior (controles)
-control_frame = ctk.CTkFrame(app, height=80)
-control_frame.pack(side="bottom", fill="x")
+controles_frame = ctk.CTkFrame(app, height=80)
+controles_frame.pack(side="bottom", fill="x")
 
-play_button = ctk.CTkButton(control_frame, text="Play", width=100, command=play_music)
-play_button.pack(side="left", padx=10, pady=10)
+btn_tocar = ctk.CTkButton(controles_frame, text="Tocar", width=100, command=tocar_musica)
+btn_tocar.pack(side="left", padx=10, pady=10)
 
-pause_button = ctk.CTkButton(control_frame, text="Pause", width=100, command=pause_music)
-pause_button.pack(side="left", padx=10, pady=10)
+btn_pausar = ctk.CTkButton(controles_frame, text="Pausar", width=100, command=pausar_musica)
+btn_pausar.pack(side="left", padx=10, pady=10)
 
-resume_button = ctk.CTkButton(control_frame, text="Resume", width=100, command=resume_music)
-resume_button.pack(side="left", padx=10, pady=10)
+btn_retomar = ctk.CTkButton(controles_frame, text="Retomar", width=100, command=retomar_musica)
+btn_retomar.pack(side="left", padx=10, pady=10)
 
-stop_button = ctk.CTkButton(control_frame, text="Stop", width=100, command=stop_music)
-stop_button.pack(side="left", padx=10, pady=10)
+btn_parar = ctk.CTkButton(controles_frame, text="Parar", width=100, command=parar_musica)
+btn_parar.pack(side="left", padx=10, pady=10)
 
-progress_bar = ctk.CTkProgressBar(control_frame, width=400)
-progress_bar.set(0.0)  # Configuração inicial (0%)
-progress_bar.pack(side="left", padx=20)
+barra_progresso = ctk.CTkProgressBar(controles_frame, width=400)
+barra_progresso.set(0.0)  # Configuração inicial (0%)
+barra_progresso.pack(side="left", padx=20)
 
 # Inicializar a aplicação
 app.mainloop()
