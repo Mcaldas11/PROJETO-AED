@@ -1,101 +1,183 @@
 import customtkinter as ctk
-from tkinter import filedialog
-import os
-from tkinter import messagebox
+from PIL import Image  # Para carregar imagens com a biblioteca PIL
 
-# Configuração inicial do CustomTkinter
-ctk.set_appearance_mode("Dark")  # Modos: "Dark", "Light"
-ctk.set_default_color_theme("blue")  # Temas: "blue", "green", "dark-blue"
+# Configurações gerais da janela
+ctk.set_appearance_mode("Dark")
+ctk.set_default_color_theme("dark-blue")
 
-# Funções de controle
-musica_atual = None
-player_ativo = False
+class AplicacaoMusica(ctk.CTk):
+    def __init__(self):
+        super().__init__()
 
-def carregar_musica():
-    global musica_atual
-    caminho_arquivo = filedialog.askopenfilename(filetypes=[("Arquivos de Áudio", "*.mp3 *.wav")])
-    if caminho_arquivo:
-        musica_atual = caminho_arquivo
-        lista_musicas.insert("end", caminho_arquivo.split("/")[-1])
-        status_label.configure(text=f"Carregado: {caminho_arquivo.split('/')[-1]}")
+        # Configurações da janela
+        self.title("Aplicação de Música")
+        self.geometry(f"{self.winfo_screenwidth()}x{self. winfo_screenheight()}")
+        self.resizable(True, True)
 
-def tocar_musica():
-    global player_ativo
-    if musica_atual:
-        parar_musica()  # Garantir que nenhuma música anterior esteja a tocar
-        os.system(f"start {musica_atual}")
-        player_ativo = True
-        status_label.configure(text=f"Tocando: {musica_atual.split('/')[-1]}")
-    else:
-        messagebox.showwarning("Nenhuma música selecionada", "Por favor, carregue uma música para tocar.")
+        # Ativar modo de tela cheia
+        self.bind("<F11>", self.toggle_fullscreen)
+        self.bind("<Escape>", self.exit_fullscreen)
+        self.fullscreen = False
 
-def pausar_musica():
-    messagebox.showinfo("Pausar", "Pausar música não é suportado com este método.")
+        # Configurar layout responsivo
+        self.grid_columnconfigure(1, weight=1)
+        self.grid_rowconfigure(0, weight=1)
 
-def retomar_musica():
-    messagebox.showinfo("Retomar", "Retomar música não é suportado com este método.")
+        # Carregar as imagens para os botões
+        self.icon_home = ctk.CTkImage(Image.open("images/home_icon.png"), size=(30, 30))
+        self.icon_playlists = ctk.CTkImage(Image.open("images/playlists_icon.png"), size=(30, 30))
+        self.icon_albuns = ctk.CTkImage(Image.open("images/albuns_icon.png"), size=(30, 30))
+        self.icon_artistas = ctk.CTkImage(Image.open("images/artistas_icon.png"), size=(30, 30))
 
-def parar_musica():
-    global player_ativo
-    if player_ativo:
-        os.system("taskkill /im wmplayer.exe /f")  # Para o Windows Media Player
-        player_ativo = False
-    status_label.configure(text="Parado")
+        # Barra lateral
+        self.barra_lateral = ctk.CTkFrame(self, width=200, corner_radius=0)
+        self.barra_lateral.grid(row=0, column=0, sticky="nswe")
+        self.barra_lateral.grid_rowconfigure(7, weight=1)  # Para empurrar o botão "Conta" para baixo
 
-# Janela principal
-app = ctk.CTk()
-app.title("Gerenciador de Música")
-app.geometry("800x600")
+        self.label_barra_lateral = ctk.CTkLabel(self.barra_lateral, text="Música", font=("Arial", 20, "bold"))
+        self.label_barra_lateral.grid(row=0, column=0, padx=20, pady=(20, 10))
 
-# Frame lateral (menu)
-menu_frame = ctk.CTkFrame(app, width=200, corner_radius=0)
-menu_frame.pack(side="left", fill="y")
+        self.campo_pesquisa = ctk.CTkEntry(self.barra_lateral, placeholder_text="Pesquisar...")
+        self.campo_pesquisa.grid(row=1, column=0, padx=20, pady=(10, 20))
 
-menu_label = ctk.CTkLabel(menu_frame, text="Menu", font=("Arial", 20, "bold"))
-menu_label.pack(pady=20)
+        # Alterando os botões para usar as imagens
+        self.botao_home = ctk.CTkButton(self.barra_lateral, text="Home", image=self.icon_home, compound="left", fg_color="#6c63ff", hover_color="#5752d1", command=self.mostrar_home)
+        self.botao_home.grid(row=2, column=0, padx=20, pady=10, sticky="ew")
 
-btn_biblioteca = ctk.CTkButton(menu_frame, text="Biblioteca", width=180, command=carregar_musica)
-btn_biblioteca.pack(pady=10)
+        self.botao_playlists = ctk.CTkButton(self.barra_lateral, text="Playlists", image=self.icon_playlists, compound="left", command=self.mostrar_playlists)
+        self.botao_playlists.grid(row=3, column=0, padx=20, pady=10, sticky="ew")
 
-btn_playlists = ctk.CTkButton(menu_frame, text="Playlists", width=180)
-btn_playlists.pack(pady=10)
+        self.botao_albuns = ctk.CTkButton(self.barra_lateral, text="Álbuns", image=self.icon_albuns, compound="left", command=self.mostrar_albuns)
+        self.botao_albuns.grid(row=4, column=0, padx=20, pady=10, sticky="ew")
 
-btn_configuracoes = ctk.CTkButton(menu_frame, text="Configurações", width=180)
-btn_configuracoes.pack(pady=10)
+        self.botao_artistas = ctk.CTkButton(self.barra_lateral, text="Artistas", image=self.icon_artistas, compound="left", command=self.mostrar_artistas)
+        self.botao_artistas.grid(row=5, column=0, padx=20, pady=10, sticky="ew")
 
-# Frame principal (conteúdo)
-conteudo_frame = ctk.CTkFrame(app)
-conteudo_frame.pack(side="left", fill="both", expand=True, padx=10, pady=10)
+        self.botao_conta = ctk.CTkButton(self.barra_lateral, text="Conta")
+        self.botao_conta.grid(row=7, column=0, padx=20, pady=10, sticky="sw")
 
-conteudo_label = ctk.CTkLabel(conteudo_frame, text="Tocando Agora", font=("Arial", 24, "bold"))
-conteudo_label.pack(pady=10)
+        # Área principal
+        self.area_principal = ctk.CTkFrame(self, corner_radius=10)
+        self.area_principal.grid(row=0, column=1, sticky="nswe", padx=(0, 20), pady=20)
+        self.area_principal.grid_rowconfigure(0, weight=1)
+        self.area_principal.grid_columnconfigure(0, weight=1)
 
-lista_musicas = ctk.CTkTextbox(conteudo_frame, height=300)
-lista_musicas.pack(fill="both", expand=True, pady=10)
-lista_musicas.insert("1.0", "Carregue músicas para exibir aqui")
+        self.frames = {
+            "home": self.criar_frame_home(),
+            "playlists": self.criar_frame_playlists(),
+            "albuns": self.criar_frame_albuns(),
+            " artistas": self.criar_frame_artistas()
+        }
 
-status_label = ctk.CTkLabel(conteudo_frame, text="Status: Ocioso", font=("Arial", 16))
-status_label.pack(pady=10)
+        self.mostrar_home()
 
-# Barra inferior (controles)
-controles_frame = ctk.CTkFrame(app, height=80)
-controles_frame.pack(side="bottom", fill="x")
+    def criar_frame_home(self):
+        frame = ctk.CTkFrame(self.area_principal, corner_radius=10)
+        frame.grid_rowconfigure(2, weight=1)
+        frame.grid_columnconfigure(0, weight=1)
 
-btn_tocar = ctk.CTkButton(controles_frame, text="Tocar", width=100, command=tocar_musica)
-btn_tocar.pack(side="left", padx=10, pady=10)
+        self.label_bem_vindo = ctk.CTkLabel(frame, text="Bem-vindo", font=("Arial", 24, "bold"))
+        self.label_bem_vindo.grid(row=0, column=0, padx=20, pady=(20, 10), sticky="w")
 
-btn_pausar = ctk.CTkButton(controles_frame, text="Pausar", width=100, command=pausar_musica)
-btn_pausar.pack(side="left", padx=10, pady=10)
+        self.label_ouvido_recentemente = ctk.CTkLabel(frame, text="Ouvido recentemente:", font=("Arial", 16))
+        self.label_ouvido_recentemente.grid(row=1, column=0, padx=20, pady=(10, 10), sticky="w")
 
-btn_retomar = ctk.CTkButton(controles_frame, text="Retomar", width=100, command=retomar_musica)
-btn_retomar.pack(side="left", padx=10, pady=10)
+        self.frame_recentes = ctk.CTkFrame(frame)
+        self.frame_recentes.grid(row=2, column=0, padx=20, pady=(10, 20), sticky="nswe")
+        self.frame_recentes.grid_columnconfigure((0, 1, 2), weight=1)
 
-btn_parar = ctk.CTkButton(controles_frame, text="Parar", width=100, command=parar_musica)
-btn_parar.pack(side="left", padx=10, pady=10)
+        for i in range(3):
+            placeholder = ctk.CTkFrame(self.frame_recentes, corner_radius=10)
+            placeholder.grid(row=0, column=i, padx=10, sticky="nswe")
 
-barra_progresso = ctk.CTkProgressBar(controles_frame, width=400)
-barra_progresso.set(0.0)  # Configuração inicial (0%)
-barra_progresso.pack(side="left", padx=20)
+        self.frame_player = ctk.CTkFrame(frame, height=50, corner_radius=10)
+        self.frame_player.grid(row=3, column=0, padx=20, pady=(10, 0), sticky="ew")
 
-# Inicializar a aplicação
-app.mainloop()
+        self.label_musica = ctk.CTkLabel(self.frame_player, text="What was I made for - Billie Eilish")
+        self.label_musica.grid(row=0, column=0, padx=10, pady=10)
+
+        self.botao_play = ctk.CTkButton(self.frame_player, text="⏯", width=40)
+        self.botao_play.grid(row=0, column=1, padx=5)
+
+        self.botao_next = ctk.CTkButton(self.frame_player, text="⏭", width=40)
+        self.botao_next.grid(row=0, column=2, padx=5)
+
+        self.botao_prev = ctk.CTkButton(self.frame_player, text="⏮", width=40)
+        self.botao_prev.grid(row=0, column=3, padx=5)
+
+        return frame
+
+    def criar_frame_playlists(self):
+        frame = ctk.CTkFrame(self.area_principal, corner_radius=10)
+        frame.grid_rowconfigure((0, 1), weight=1)
+        frame.grid_columnconfigure((0, 1, 2), weight=1)
+
+        label = ctk.CTkLabel(frame, text="Playlists", font=("Arial", 24, "bold"))
+        label.grid(row=0, column=0, columnspan=3, padx=20, pady=(20, 10), sticky="w")
+
+        for i in range(2):
+            for j in range(3):
+                placeholder = ctk.CTkFrame(frame, corner_radius=10)
+                placeholder.grid(row=i+1, column=j, padx=20, pady=10, sticky="nswe")
+
+        return frame
+
+    def criar_frame_albuns(self):
+        frame = ctk.CTkFrame(self.area_principal, corner_radius=10)
+        frame.grid_rowconfigure((0, 1), weight=1)
+        frame.grid_columnconfigure((0, 1, 2), weight=1)
+
+        label = ctk.CTkLabel(frame, text="Álbuns", font=("Arial", 24, "bold"))
+        label.grid(row=0, column=0, columnspan=3, padx=20, pady=(20, 10), sticky="w")
+
+        for i in range(2):
+            for j in range(3):
+                placeholder = ctk.CTkFrame(frame, corner_radius=10)
+                placeholder.grid(row=i+1, column=j, padx=20, pady=10, sticky="nswe")
+
+        return frame
+
+    def criar_frame_artistas(self):
+        frame = ctk.CTkFrame(self.area_principal, corner_radius=10)
+        frame.grid_rowconfigure((0, 1), weight=1)
+        frame.grid_columnconfigure((0, 1, 2), weight=1)
+
+        label = ctk.CTkLabel(frame, text="Artistas", font=("Arial", 24, "bold"))
+        label.grid(row=0, column=0, columnspan=3, padx=20, pady=(20, 10), sticky="w")
+
+        for i in range(2):
+            for j in range(3):
+                placeholder = ctk.CTkFrame(frame, corner_radius=10)
+                placeholder.grid(row=i+1, column=j, padx=20, pady=10, sticky="nswe")
+
+        return frame
+
+    def mostrar_home(self):
+        self.alternar_frame("home")
+
+    def mostrar_playlists(self):
+        self.alternar_frame("playlists")
+
+    def mostrar_albuns(self):
+        self.alternar_frame("albuns")
+
+    def mostrar_artistas(self):
+        self.alternar_frame("artistas")
+
+    def alternar_frame(self, frame_nome):
+        for frame in self.frames.values():
+            frame.grid_forget()
+        self.frames[frame_nome].grid(row=0, column=0, sticky="nswe")
+
+    def toggle_fullscreen(self, event=None):
+        self.fullscreen = not self.fullscreen
+        self.attributes("-fullscreen", self.fullscreen)
+
+    def exit_fullscreen(self, event=None):
+        self.fullscreen = False
+        self.attributes("-fullscreen", False)
+
+# Executar aplicação
+if __name__ == "__main__":
+    app = AplicacaoMusica()
+    app.mainloop()
