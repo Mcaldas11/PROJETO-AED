@@ -1,183 +1,290 @@
 import customtkinter as ctk
-from PIL import Image  # Para carregar imagens com a biblioteca PIL
+from tkinter import filedialog, messagebox
+import os
+import shutil
+import threading
+import time
+from mutagen.mp3 import MP3
+import pygame
 
-# Configurações gerais da janela
+pygame.mixer.init()
+
+# Configuração inicial do CustomTkinter
 ctk.set_appearance_mode("Dark")
 ctk.set_default_color_theme("dark-blue")
 
-class AplicacaoMusica(ctk.CTk):
-    def __init__(self):
-        super().__init__()
+# Variáveis globais
+biblioteca_musicas = {}
+musica_atual = None
+player_ativo = False
+usuario_atual = None
 
-        # Configurações da janela
-        self.title("Aplicação de Música")
-        self.geometry(f"{self.winfo_screenwidth()}x{self. winfo_screenheight()}")
-        self.resizable(True, True)
+# Caminho da pasta onde as músicas serão armazenadas
+pasta_biblioteca = os.path.join(os.getcwd(), "biblioteca_musicas")
+if not os.path.exists(pasta_biblioteca):
+    os.makedirs(pasta_biblioteca)
 
-        # Ativar modo de tela cheia
-        self.bind("<F11>", self.toggle_fullscreen)
-        self.bind("<Escape>", self.exit_fullscreen)
-        self.fullscreen = False
+# Funções do gerenciador de música
+def carregar_musica():
+    global musica_atual
+    caminhos_arquivos = filedialog.askopenfilenames(filetypes=[("Arquivos de Áudio", "*.mp3 *.wav")])
+    if caminhos_arquivos:
+        for caminho in caminhos_arquivos:
+            nome_musica = os.path.basename(caminho)
+            caminho_destino = os.path.join(pasta_biblioteca, nome_musica)
 
-        # Configurar layout responsivo
-        self.grid_columnconfigure(1, weight=1)
-        self.grid_rowconfigure(0, weight=1)
+            if nome_musica not in biblioteca_musicas:
+                shutil.copy2(caminho, caminho_destino)
+                biblioteca_musicas[nome_musica] = {"caminho": caminho_destino, "like": False}
 
-        # Carregar as imagens para os botões
-        self.icon_home = ctk.CTkImage(Image.open("images/home_icon.png"), size=(30, 30))
-        self.icon_playlists = ctk.CTkImage(Image.open("images/playlists_icon.png"), size=(30, 30))
-        self.icon_albuns = ctk.CTkImage(Image.open("images/albuns_icon.png"), size=(30, 30))
-        self.icon_artistas = ctk.CTkImage(Image.open("images/artistas_icon.png"), size=(30, 30))
+        musica_atual = caminhos_arquivos[0]
+        status_label.configure(text=f"{len(caminhos_arquivos)} músicas carregadas.")
+        atualizar_lista_musicas()
 
-        # Barra lateral
-        self.barra_lateral = ctk.CTkFrame(self, width=200, corner_radius=0)
-        self.barra_lateral.grid(row=0, column=0, sticky="nswe")
-        self.barra_lateral.grid_rowconfigure(7, weight=1)  # Para empurrar o botão "Conta" para baixo
+def selecionar_musica(nome):
+    global musica_atual
+    if nome in biblioteca_musicas:
+        musica_atual = biblioteca_musicas[nome]["caminho"]
+        status_label.configure(text=f"Selecionado: {nome}")
 
-        self.label_barra_lateral = ctk.CTkLabel(self.barra_lateral, text="Música", font=("Arial", 20, "bold"))
-        self.label_barra_lateral.grid(row=0, column=0, padx=20, pady=(20, 10))
+def tocar_musica():
+    global player_ativo
+    if musica_atual:
+        parar_musica()
+        try:
+            pygame.mixer.music.load(musica_atual)
+            pygame.mixer.music.play()
+            player_ativo = True
+            status_label.configure(text=f"Tocando: {os.path.basename(musica_atual)}")
+            thread = threading.Thread(target=atualizar_barra_progresso)
+            thread.daemon = True
+            thread.start()
+        except Exception as e:
+            messagebox.showerror("Erro", f"Não foi possível tocar a música: {e}")
+    else:
+        messagebox.showwarning("Nenhuma música selecionada", "Por favor, selecione uma música para tocar.")
 
-        self.campo_pesquisa = ctk.CTkEntry(self.barra_lateral, placeholder_text="Pesquisar...")
-        self.campo_pesquisa.grid(row=1, column=0, padx=20, pady=(10, 20))
+def parar_musica():
+    global player_ativo
+    if player_ativo:
+        pygame.mixer.music.stop()
+        player_ativo = False
+    status_label.configure(text="Parado")
+    barra_progresso.set(0.0)
 
-        # Alterando os botões para usar as imagens
-        self.botao_home = ctk.CTkButton(self.barra_lateral, text="Home", image=self.icon_home, compound="left", fg_color="#6c63ff", hover_color="#5752d1", command=self.mostrar_home)
-        self.botao_home.grid(row=2, column=0, padx=20, pady=10, sticky="ew")
+def atualizar_barra_progresso():
+    global musica_atual
+    if musica_atual:
+        try:
+            audio = MP3(musica_atual)
+            duracao = audio.info.length
+            for i in range(int(duracao)):
+                if not player_ativo:
+                    break
+                barra_progresso.set(i / duracao)
+                time.sleep(1)
+        except Exception as e:
+            print(f"Erro ao atualizar a barra de progresso: {e}")
 
-        self.botao_playlists = ctk.CTkButton(self.barra_lateral, text="Playlists", image=self.icon_playlists, compound="left", command=self.mostrar_playlists)
-        self.botao_playlists.grid(row=3, column=0, padx=20, pady=10, sticky="ew")
+def atualizar_lista_musicas():
+    for widget in music_grid_frame.winfo_children():
+        widget.destroy()
 
-        self.botao_albuns = ctk.CTkButton(self.barra_lateral, text="Álbuns", image=self.icon_albuns, compound="left", command=self.mostrar_albuns)
-        self.botao_albuns.grid(row=4, column=0, padx=20, pady=10, sticky="ew")
+    for nome, dados in biblioteca_musicas.items():
+        cor = "red" if dados["like"] else "white"
+        musica_button = ctk.CTkButton(music_grid_frame, 
+                                      text=nome, 
+                                      fg_color=cor, 
+                                      text_color="black",
+                                      command=lambda nome=nome: selecionar_musica(nome))
+        musica_button.pack(padx=10, pady=10, fill="x")
 
-        self.botao_artistas = ctk.CTkButton(self.barra_lateral, text="Artistas", image=self.icon_artistas, compound="left", command=self.mostrar_artistas)
-        self.botao_artistas.grid(row=5, column=0, padx=20, pady=10, sticky="ew")
+# Funções de autenticação
+def login():
+    usuario = usuario_entry.get().strip()
+    senha = senha_entry.get().strip()
 
-        self.botao_conta = ctk.CTkButton(self.barra_lateral, text="Conta")
-        self.botao_conta.grid(row=7, column=0, padx=20, pady=10, sticky="sw")
+    if not usuario or not senha:
+        messagebox.showerror("Erro", "Por favor, preencha todos os campos.")
+        return
 
-        # Área principal
-        self.area_principal = ctk.CTkFrame(self, corner_radius=10)
-        self.area_principal.grid(row=0, column=1, sticky="nswe", padx=(0, 20), pady=20)
-        self.area_principal.grid_rowconfigure(0, weight=1)
-        self.area_principal.grid_columnconfigure(0, weight=1)
+    caminho_usuario = os.path.join("dados_usuarios", usuario)
 
-        self.frames = {
-            "home": self.criar_frame_home(),
-            "playlists": self.criar_frame_playlists(),
-            "albuns": self.criar_frame_albuns(),
-            " artistas": self.criar_frame_artistas()
-        }
+    if os.path.exists(caminho_usuario):
+        with open(os.path.join(caminho_usuario, "dados.txt"), "r") as f:
+            dados = f.readlines()
+            senha_correta = dados[1].split(": ")[1].strip()
 
-        self.mostrar_home()
+            if senha == senha_correta:
+                global usuario_atual
+                usuario_atual = usuario
+                login_frame.pack_forget()
+                app_frame.pack(expand=True, fill="both", padx=20, pady=20)
+                return
 
-    def criar_frame_home(self):
-        frame = ctk.CTkFrame(self.area_principal, corner_radius=10)
-        frame.grid_rowconfigure(2, weight=1)
-        frame.grid_columnconfigure(0, weight=1)
+    messagebox.showerror("Erro", "Usuário ou senha incorretos.")
 
-        self.label_bem_vindo = ctk.CTkLabel(frame, text="Bem-vindo", font=("Arial", 24, "bold"))
-        self.label_bem_vindo.grid(row=0, column=0, padx=20, pady=(20, 10), sticky="w")
+def criar_conta():
+    novo_usuario = novo_usuario_entry.get().strip()
+    nova_senha = nova_senha_entry.get().strip()
+    confirmar_senha = confirmar_senha_entry.get().strip()
 
-        self.label_ouvido_recentemente = ctk.CTkLabel(frame, text="Ouvido recentemente:", font=("Arial", 16))
-        self.label_ouvido_recentemente.grid(row=1, column=0, padx=20, pady=(10, 10), sticky="w")
+    caminho_usuario = os.path.join("dados_usuarios", novo_usuario)
 
-        self.frame_recentes = ctk.CTkFrame(frame)
-        self.frame_recentes.grid(row=2, column=0, padx=20, pady=(10, 20), sticky="nswe")
-        self.frame_recentes.grid_columnconfigure((0, 1, 2), weight=1)
+    if not novo_usuario or not nova_senha or not confirmar_senha:
+        messagebox.showerror("Erro", "Por favor, preencha todos os campos.")
+        return
 
-        for i in range(3):
-            placeholder = ctk.CTkFrame(self.frame_recentes, corner_radius=10)
-            placeholder.grid(row=0, column=i, padx=10, sticky="nswe")
+    if nova_senha != confirmar_senha:
+        messagebox.showerror("Erro", "As senhas não coincidem.")
+        return
 
-        self.frame_player = ctk.CTkFrame(frame, height=50, corner_radius=10)
-        self.frame_player.grid(row=3, column=0, padx=20, pady=(10, 0), sticky="ew")
+    if os.path.exists(caminho_usuario):
+        messagebox.showerror("Erro", "Nome de usuário já está em uso.")
+        return
 
-        self.label_musica = ctk.CTkLabel(self.frame_player, text="What was I made for - Billie Eilish")
-        self.label_musica.grid(row=0, column=0, padx=10, pady=10)
+    os.makedirs(caminho_usuario)
+    with open(os.path.join(caminho_usuario, "dados.txt"), "w") as f:
+        f.write(f"Usuário: {novo_usuario}\nSenha: {nova_senha}")
 
-        self.botao_play = ctk.CTkButton(self.frame_player, text="⏯", width=40)
-        self.botao_play.grid(row=0, column=1, padx=5)
+    messagebox.showinfo("Sucesso", "Conta criada com sucesso.")
+    criar_conta_frame.pack_forget()
+    login_frame.pack(expand=True, fill="both", padx=20, pady=20)
 
-        self.botao_next = ctk.CTkButton(self.frame_player, text="⏭", width=40)
-        self.botao_next.grid(row=0, column=2, padx=5)
+# Configuração da interface
+def mostrar_tela_criar_conta():
+    login_frame.pack_forget()
+    criar_conta_frame.pack(expand=True, fill="both", padx=20, pady=20)
 
-        self.botao_prev = ctk.CTkButton(self.frame_player, text="⏮", width=40)
-        self.botao_prev.grid(row=0, column=3, padx=5)
+app = ctk.CTk()
+app.title("MusicWave")
+app.geometry("1024x640")
+app.grid_rowconfigure(0, weight=1)
+app.grid_columnconfigure(1, weight=1)
 
-        return frame
+# Tela de login
+login_frame = ctk.CTkFrame(app, corner_radius=10)
+login_frame.pack(expand=True, fill="both", padx=20, pady=20)
 
-    def criar_frame_playlists(self):
-        frame = ctk.CTkFrame(self.area_principal, corner_radius=10)
-        frame.grid_rowconfigure((0, 1), weight=1)
-        frame.grid_columnconfigure((0, 1, 2), weight=1)
+login_label = ctk.CTkLabel(login_frame, text="Login", font=("Roboto", 24, "bold"))
+login_label.pack(pady=20)
 
-        label = ctk.CTkLabel(frame, text="Playlists", font=("Arial", 24, "bold"))
-        label.grid(row=0, column=0, columnspan=3, padx=20, pady=(20, 10), sticky="w")
+usuario_entry = ctk.CTkEntry(login_frame, placeholder_text="Usuário", width=522, height=33)
+usuario_entry.pack(pady=10, padx=20)
 
-        for i in range(2):
-            for j in range(3):
-                placeholder = ctk.CTkFrame(frame, corner_radius=10)
-                placeholder.grid(row=i+1, column=j, padx=20, pady=10, sticky="nswe")
+senha_entry = ctk.CTkEntry(login_frame, placeholder_text="Senha", show="*", width=522, height=33)
+senha_entry.pack(pady=10, padx=20)
 
-        return frame
+login_button = ctk.CTkButton(login_frame, text="Entrar", command=login, fg_color="#5B299B", text_color="white", width=522, height=33, corner_radius=15)
+login_button.pack(pady=10)
 
-    def criar_frame_albuns(self):
-        frame = ctk.CTkFrame(self.area_principal, corner_radius=10)
-        frame.grid_rowconfigure((0, 1), weight=1)
-        frame.grid_columnconfigure((0, 1, 2), weight=1)
+criar_conta_button = ctk.CTkButton(login_frame, text="Criar Conta", command=mostrar_tela_criar_conta, fg_color="#5B299B", text_color="white", width=522, height=33, corner_radius=15)
+criar_conta_button.pack(pady=10)
 
-        label = ctk.CTkLabel(frame, text="Álbuns", font=("Arial", 24, "bold"))
-        label.grid(row=0, column=0, columnspan=3, padx=20, pady=(20, 10), sticky="w")
+# Tela de criação de conta
+criar_conta_frame = ctk.CTkFrame(app, corner_radius=10)
 
-        for i in range(2):
-            for j in range(3):
-                placeholder = ctk.CTkFrame(frame, corner_radius=10)
-                placeholder.grid(row=i+1, column=j, padx=20, pady=10, sticky="nswe")
+criar_conta_label = ctk.CTkLabel(criar_conta_frame, text="Criar Conta", font=("Roboto", 24, "bold"))
+criar_conta_label.pack(pady=20)
 
-        return frame
+novo_usuario_entry = ctk.CTkEntry(criar_conta_frame, placeholder_text="Novo Usuário", width=522, height=33)
+novo_usuario_entry.pack(pady=10, padx=20)
 
-    def criar_frame_artistas(self):
-        frame = ctk.CTkFrame(self.area_principal, corner_radius=10)
-        frame.grid_rowconfigure((0, 1), weight=1)
-        frame.grid_columnconfigure((0, 1, 2), weight=1)
 
-        label = ctk.CTkLabel(frame, text="Artistas", font=("Arial", 24, "bold"))
-        label.grid(row=0, column=0, columnspan=3, padx=20, pady=(20, 10), sticky="w")
+nova_senha_entry = ctk.CTkEntry(criar_conta_frame, placeholder_text="Senha", show="*", width=522, height=33)
+nova_senha_entry.pack(pady=10, padx=20)
 
-        for i in range(2):
-            for j in range(3):
-                placeholder = ctk.CTkFrame(frame, corner_radius=10)
-                placeholder.grid(row=i+1, column=j, padx=20, pady=10, sticky="nswe")
 
-        return frame
+confirmar_senha_entry = ctk.CTkEntry(criar_conta_frame, placeholder_text="Confirmar Senha", show="*", width=522, height=33)
+confirmar_senha_entry.pack(pady=10, padx=20)
 
-    def mostrar_home(self):
-        self.alternar_frame("home")
+salvar_conta_button = ctk.CTkButton(criar_conta_frame, text="Criar Conta", command=criar_conta, fg_color="#5B299B", text_color="white", width=522, height=43, corner_radius=15)
+salvar_conta_button.pack(pady=20)
 
-    def mostrar_playlists(self):
-        self.alternar_frame("playlists")
+btn_voltar_login = ctk.CTkButton(criar_conta_frame, fg_color="#5B299B", text_color="white", width=522, height=41, corner_radius=15, text="Voltar", command=lambda: [criar_conta_frame.pack_forget(), login_frame.pack(expand=True, fill="both", padx=20, pady=20)])
+btn_voltar_login.pack(pady=10)
 
-    def mostrar_albuns(self):
-        self.alternar_frame("albuns")
+# Tela principal
+app_frame = ctk.CTkFrame(app)
 
-    def mostrar_artistas(self):
-        self.alternar_frame("artistas")
+# Cabeçalho da tela principal
+app_label = ctk.CTkLabel(app_frame, text="Gerenciador de Música", font=("Roboto", 24, "bold"))
+app_label.grid(row=0, column=0, padx=20, pady=10, sticky="w")
 
-    def alternar_frame(self, frame_nome):
-        for frame in self.frames.values():
-            frame.grid_forget()
-        self.frames[frame_nome].grid(row=0, column=0, sticky="nswe")
+logout_button = ctk.CTkButton(app_frame, text="Sair", command=lambda: logout())
+logout_button.grid(row=0, column=1, padx=20, pady=10, sticky="e")
 
-    def toggle_fullscreen(self, event=None):
-        self.fullscreen = not self.fullscreen
-        self.attributes("-fullscreen", self.fullscreen)
+# Menu lateral (aproveitado do código fornecido)
+menu_frame = ctk.CTkFrame(app_frame, width=200, corner_radius=10)
+menu_frame.grid(row=1, column=0, sticky="nsw", padx=10, pady=10)
 
-    def exit_fullscreen(self, event=None):
-        self.fullscreen = False
-        self.attributes("-fullscreen", False)
+menu_label = ctk.CTkLabel(menu_frame, text="Música", font=("Roboto", 20, "bold"))
+menu_label.pack(pady=20)
 
-# Executar aplicação
-if __name__ == "__main__":
-    app = AplicacaoMusica()
-    app.mainloop()
+search_entry = ctk.CTkEntry(menu_frame, placeholder_text="Pesquisar...")
+search_entry.pack(pady=10, padx=20, fill="x")
+
+btn_home = ctk.CTkButton(menu_frame, text="Home", width=180, corner_radius=5, fg_color="purple")
+btn_home.pack(pady=5)
+
+btn_playlists = ctk.CTkButton(menu_frame, text="Playlists", width=180, corner_radius=5)
+btn_playlists.pack(pady=5)
+
+btn_albums = ctk.CTkButton(menu_frame, text="Álbuns", width=180, corner_radius=5)
+btn_albums.pack(pady=5)
+
+btn_artists = ctk.CTkButton(menu_frame, text="Artistas", width=180, corner_radius=5)
+btn_artists.pack(pady=5)
+
+# Conteúdo principal da tela de música
+conteudo_frame = ctk.CTkFrame(app_frame, corner_radius=10)
+conteudo_frame.grid(row=1, column=1, sticky="nsew", padx=10, pady=10)
+
+conteudo_label = ctk.CTkLabel(conteudo_frame, text="Bem-vindo", font=("Roboto", 26, "bold"))
+conteudo_label.grid(row=0, column=0, padx=20, pady=10, sticky="w")
+
+recent_label = ctk.CTkLabel(conteudo_frame, text="Ouvido recentemente", font=("Roboto", 18))
+recent_label.grid(row=1, column=0, padx=20, pady=10, sticky="w")
+
+# Placeholder de músicas recentes
+for i in range(3):
+    placeholder = ctk.CTkFrame(conteudo_frame, width=150, height=150, fg_color="gray")
+    placeholder.grid(row=2, column=i, padx=10, pady=10)
+
+# Grid para exibir músicas
+music_grid_frame = ctk.CTkScrollableFrame(conteudo_frame, width=600, height=300)
+music_grid_frame.grid(row=3, column=0, columnspan=3, sticky="nsew", padx=20, pady=10)
+
+# Controles de reprodução
+controles_frame = ctk.CTkFrame(app_frame, height=80, corner_radius=10)
+controles_frame.grid(row=2, column=0, columnspan=2, sticky="ew", padx=10, pady=10)
+
+barra_progresso = ctk.CTkProgressBar(controles_frame, height=10)
+barra_progresso.set(0.0)
+barra_progresso.pack(fill="x", padx=20, pady=10)
+
+status_label = ctk.CTkLabel(controles_frame, text="Bem-vindo ao Gerenciador de Música", font=("Roboto", 14))
+status_label.pack(side="left", padx=20)
+
+btn_prev = ctk.CTkButton(controles_frame, text="\u23ee\ufe0f", width=50)
+btn_prev.pack(side="left", padx=5)
+
+btn_play = ctk.CTkButton(controles_frame, text="\u25b6\ufe0f", width=50, command=tocar_musica)
+btn_play.pack(side="left", padx=5)
+
+btn_next = ctk.CTkButton(controles_frame, text="\u23ed\ufe0f", width=50)
+btn_next.pack(side="left", padx=5)
+
+# Função para sair
+def logout():
+    global usuario_atual
+    usuario_atual = None
+    app_frame.pack_forget()
+    login_frame.pack(expand=True, fill="both", padx=20, pady=20)
+
+# Configuração do grid
+app_frame.grid_rowconfigure(1, weight=1)
+app_frame.grid_columnconfigure(1, weight=1)
+
+# Inicializar o app
+app.mainloop()
