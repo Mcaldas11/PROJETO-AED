@@ -111,11 +111,13 @@ def login():
     caminho_usuario = os.path.join("dados_usuarios", usuario)
 
     if os.path.exists(caminho_usuario):
-        with open(os.path.join(caminho_usuario, "dados.txt"), "r") as f:
-            dados = f.readlines()
-            senha_correta = dados[1].split(": ")[1].strip()
+        f = open(os.path.join(caminho_usuario, "dados.txt"), "r")
+        dados = f.readlines()
+        f.close()
+        senha_correta = dados[1].split(": ")[1].strip()
 
-            if senha == senha_correta:
+
+        if senha == senha_correta:
                 global usuario_atual
                 usuario_atual = usuario
                 login_frame.pack_forget()
@@ -144,8 +146,10 @@ def criar_conta():
         return
 
     os.makedirs(caminho_usuario)
-    with open(os.path.join(caminho_usuario, "dados.txt"), "w") as f:
-        f.write(f"Usuário: {novo_usuario}\nSenha: {nova_senha}")
+    f = open(os.path.join(caminho_usuario, "dados.txt"), "w")
+    f.write(f"Usuário: {novo_usuario}\nSenha: {nova_senha}")
+    f.close()
+
 
     messagebox.showinfo("Sucesso", "Conta criada com sucesso.")
     criar_conta_frame.pack_forget()
@@ -214,7 +218,7 @@ app_label.grid(row=0, column=0, padx=20, pady=10, sticky="w")
 logout_button = ctk.CTkButton(app_frame, text="Sair", command=lambda: logout())
 logout_button.grid(row=0, column=1, padx=20, pady=10, sticky="e")
 
-# Menu lateral (aproveitado do código fornecido)
+# Menu lateral 
 menu_frame = ctk.CTkFrame(app_frame, width=200, corner_radius=10)
 menu_frame.grid(row=1, column=0, sticky="nsw", padx=10, pady=10)
 
