@@ -160,6 +160,49 @@ def mostrar_tela_criar_conta():
     login_frame.pack_forget()
     criar_conta_frame.pack(expand=True, fill="both", padx=20, pady=20)
 
+# Função para mostrar a tela de gerenciamento de conta
+def mostrar_tela_gerenciar_conta():
+    app_frame.pack_forget()
+    gerenciar_conta_frame.pack(expand=True, fill="both", padx=20, pady=20)
+
+# Função para atualizar a senha do utilizador
+def atualizar_senha():
+    senha_atual = senha_atual_entry.get().strip()
+    nova_senha = nova_senha_entry_gerenciar.get().strip()
+    confirmar_senha = confirmar_senha_entry_gerenciar.get().strip()
+
+    caminho_utilizador = os.path.join("dados_utilizadores", utilizador_atual)
+    f = open(os.path.join(caminho_utilizador, "dados.txt"), "r")
+    dados = f.readlines()
+    f.close()
+
+    senha_correta = dados[1].split(": ")[1].strip()
+
+    if senha_atual != senha_correta:
+        messagebox.showerror("Erro", "A senha atual está incorreta.")
+        return
+
+    if not nova_senha or nova_senha != confirmar_senha:
+        messagebox.showerror("Erro", "As senhas não coincidem ou estão em branco.")
+        return
+
+    f = open(os.path.join(caminho_utilizador, "dados.txt"), "w")
+    f.write(f"Utilizador: {utilizador_atual}\nSenha: {nova_senha}")
+    f.close()
+    
+    messagebox.showinfo("Sucesso", "Senha atualizada com sucesso.")
+    gerenciar_conta_frame.pack_forget()
+    app_frame.pack(expand=True, fill="both", padx=20, pady=20)
+
+# Função para excluir a conta
+def excluir_conta():
+    resposta = messagebox.askyesno("Confirmação", "Tem certeza que deseja excluir sua conta?")
+    if resposta:
+        caminho_utilizador = os.path.join("dados_utilizadores", utilizador_atual)
+        shutil.rmtree(caminho_utilizador)
+        logout()
+        messagebox.showinfo("Sucesso", "Conta excluída com sucesso.")
+
 app = ctk.CTk()
 app.title("MusicWave")
 app.geometry("1024x640")
@@ -278,6 +321,34 @@ btn_play.pack(side="left", padx=5)
 
 btn_next = ctk.CTkButton(controles_frame, text="\u23ed\ufe0f", width=50)
 btn_next.pack(side="left", padx=5)
+
+# Tela de gerenciamento de conta
+gerenciar_conta_frame = ctk.CTkFrame(app, corner_radius=10)
+
+gerenciar_label = ctk.CTkLabel(gerenciar_conta_frame, text="Gerenciar Conta", font=("Roboto", 24, "bold"))
+gerenciar_label.pack(pady=20)
+
+senha_atual_entry = ctk.CTkEntry(gerenciar_conta_frame, placeholder_text="Senha Atual", show="*", width=522, height=33)
+senha_atual_entry.pack(pady=10, padx=20)
+
+nova_senha_entry_gerenciar = ctk.CTkEntry(gerenciar_conta_frame, placeholder_text="Nova Senha", show="*", width=522, height=33)
+nova_senha_entry_gerenciar.pack(pady=10, padx=20)
+
+confirmar_senha_entry_gerenciar = ctk.CTkEntry(gerenciar_conta_frame, placeholder_text="Confirmar Nova Senha", show="*", width=522, height=33)
+confirmar_senha_entry_gerenciar.pack(pady=10, padx=20)
+
+atualizar_senha_button = ctk.CTkButton(gerenciar_conta_frame, text="Atualizar Senha", command=atualizar_senha, fg_color="#5B299B", text_color="white", width=522, height=43, corner_radius=15)
+atualizar_senha_button.pack(pady=20)
+
+excluir_conta_button = ctk.CTkButton(gerenciar_conta_frame, text="Excluir Conta", command=excluir_conta, fg_color="red", text_color="white", width=522, height=43, corner_radius=15)
+excluir_conta_button.pack(pady=10)
+
+btn_voltar_principal = ctk.CTkButton(gerenciar_conta_frame, fg_color="#5B299B", text_color="white", width=522, height=41, corner_radius=15, text="Voltar", command=lambda: [gerenciar_conta_frame.pack_forget(), app_frame.pack(expand=True, fill="both", padx=20, pady=20)])
+btn_voltar_principal.pack(pady=10)
+
+# Adicionar botão "Gerenciar Conta" na tela principal
+btn_gerenciar_conta = ctk.CTkButton(app_frame, text="Gerenciar Conta", command=mostrar_tela_gerenciar_conta, fg_color="blue", text_color="white", width=180, corner_radius=5)
+btn_gerenciar_conta.grid(row=0, column=2, padx=10, pady=10, sticky="e")
 
 # Função para sair
 def logout():
