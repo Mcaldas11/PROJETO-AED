@@ -350,8 +350,14 @@ btn_voltar_principal = ctk.CTkButton(gerenciar_conta_frame, fg_color="#5B299B", 
 btn_voltar_principal.pack(pady=10)
 
 # Adicionar botão "Gerenciar Conta" na tela principal
-btn_gerenciar_conta = ctk.CTkButton(app_frame, text="Gerenciar Conta", command=mostrar_tela_gerenciar_conta, fg_color="blue", text_color="white", width=180, corner_radius=5)
-btn_gerenciar_conta.grid(row=0, column=2, padx=10, pady=10, sticky="e")
+btn_gerenciar_conta = ctk.CTkButton(menu_frame, 
+                                    text="Gerenciar Conta", 
+                                    command=mostrar_tela_gerenciar_conta, 
+                                    fg_color="blue", 
+                                    text_color="white", 
+                                    width=180, 
+                                    corner_radius=5)
+btn_gerenciar_conta.pack(side="bottom", pady=10, padx=10)
 
 # Função para sair
 def logout():
