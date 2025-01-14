@@ -200,8 +200,11 @@ def excluir_conta():
     if resposta:
         caminho_utilizador = os.path.join("dados_utilizadores", utilizador_atual)
         shutil.rmtree(caminho_utilizador)
-        logout()
+        logout()  # Retorna para a tela de login
         messagebox.showinfo("Sucesso", "Conta excluída com sucesso.")
+        gerenciar_conta_frame.pack_forget()
+        login_frame.pack(expand=True, fill="both", padx=20, pady=20)
+
 
 app = ctk.CTk()
 app.title("MusicWave")
