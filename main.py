@@ -379,7 +379,6 @@ playlists_frame = ctk.CTkFrame(app, corner_radius=10)
 playlists_label = ctk.CTkLabel(playlists_frame, text="Playlists", font=("Roboto", 24, "bold"))
 playlists_label.pack(pady=20)
 
-# Adicione widgets específicos para Playlists aqui...
 
 btn_voltar_playlists = ctk.CTkButton(playlists_frame, text="Voltar", command=lambda: mostrar_tela_principal())
 btn_voltar_playlists.pack(pady=10)
@@ -390,7 +389,6 @@ albums_frame = ctk.CTkFrame(app, corner_radius=10)
 albums_label = ctk.CTkLabel(albums_frame, text="Álbuns", font=("Roboto", 24, "bold"))
 albums_label.pack(pady=20)
 
-# Adicione widgets específicos para Álbuns aqui...
 
 btn_voltar_albums = ctk.CTkButton(albums_frame, text="Voltar", command=lambda: mostrar_tela_principal())
 btn_voltar_albums.pack(pady=10)
@@ -401,13 +399,12 @@ artists_frame = ctk.CTkFrame(app, corner_radius=10)
 artists_label = ctk.CTkLabel(artists_frame, text="Artistas", font=("Roboto", 24, "bold"))
 artists_label.pack(pady=20)
 
-# Adicione widgets específicos para Artistas aqui...
 
 btn_voltar_artists = ctk.CTkButton(artists_frame, text="Voltar", command=lambda: mostrar_tela_principal())
 btn_voltar_artists.pack(pady=10)
 
 
-# Adicionar botão "Gerenciar Conta" na tela principal
+# Adicionar botão "Conta" na tela principal
 btn_gerenciar_conta = ctk.CTkButton(menu_frame, 
                                     text="Conta", 
                                     command=mostrar_tela_gerenciar_conta, 
@@ -428,5 +425,5 @@ def logout():
 app_frame.grid_rowconfigure(1, weight=1)
 app_frame.grid_columnconfigure(1, weight=1)
 
-# Inicializar o app
+# Iniciar a app
 app.mainloop()
