@@ -205,6 +205,25 @@ def excluir_conta():
         gerenciar_conta_frame.pack_forget()
         login_frame.pack(expand=True, fill="both", padx=20, pady=20)
 
+def mostrar_tela_playlists():
+    app_frame.pack_forget()
+    playlists_frame.pack(expand=True, fill="both", padx=20, pady=20)
+
+def mostrar_tela_albuns():
+    app_frame.pack_forget()
+    albums_frame.pack(expand=True, fill="both", padx=20, pady=20)
+
+def mostrar_tela_artistas():
+    app_frame.pack_forget()
+    artists_frame.pack(expand=True, fill="both", padx=20, pady=20)
+
+def mostrar_tela_principal():
+    playlists_frame.pack_forget()
+    albums_frame.pack_forget()
+    artists_frame.pack_forget()
+    app_frame.pack(expand=True, fill="both", padx=20, pady=20)
+
+
 
 app = ctk.CTk()
 app.title("MusicWave")
@@ -348,6 +367,45 @@ excluir_conta_button.pack(pady=10)
 
 btn_voltar_principal = ctk.CTkButton(gerenciar_conta_frame, fg_color="#5B299B", text_color="white", width=522, height=41, corner_radius=15, text="Voltar", command=lambda: [gerenciar_conta_frame.pack_forget(), app_frame.pack(expand=True, fill="both", padx=20, pady=20)])
 btn_voltar_principal.pack(pady=10)
+
+btn_playlists.configure(command=mostrar_tela_playlists)
+btn_albums.configure(command=mostrar_tela_albuns)
+btn_artists.configure(command=mostrar_tela_artistas)
+
+
+# Frame de Playlists
+playlists_frame = ctk.CTkFrame(app, corner_radius=10)
+
+playlists_label = ctk.CTkLabel(playlists_frame, text="Playlists", font=("Roboto", 24, "bold"))
+playlists_label.pack(pady=20)
+
+# Adicione widgets específicos para Playlists aqui...
+
+btn_voltar_playlists = ctk.CTkButton(playlists_frame, text="Voltar", command=lambda: mostrar_tela_principal())
+btn_voltar_playlists.pack(pady=10)
+
+# Frame de Álbuns
+albums_frame = ctk.CTkFrame(app, corner_radius=10)
+
+albums_label = ctk.CTkLabel(albums_frame, text="Álbuns", font=("Roboto", 24, "bold"))
+albums_label.pack(pady=20)
+
+# Adicione widgets específicos para Álbuns aqui...
+
+btn_voltar_albums = ctk.CTkButton(albums_frame, text="Voltar", command=lambda: mostrar_tela_principal())
+btn_voltar_albums.pack(pady=10)
+
+# Frame de Artistas
+artists_frame = ctk.CTkFrame(app, corner_radius=10)
+
+artists_label = ctk.CTkLabel(artists_frame, text="Artistas", font=("Roboto", 24, "bold"))
+artists_label.pack(pady=20)
+
+# Adicione widgets específicos para Artistas aqui...
+
+btn_voltar_artists = ctk.CTkButton(artists_frame, text="Voltar", command=lambda: mostrar_tela_principal())
+btn_voltar_artists.pack(pady=10)
+
 
 # Adicionar botão "Gerenciar Conta" na tela principal
 btn_gerenciar_conta = ctk.CTkButton(menu_frame, 
