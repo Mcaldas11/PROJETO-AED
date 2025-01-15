@@ -409,7 +409,7 @@ btn_voltar_artists.pack(pady=10)
 
 # Adicionar botão "Gerenciar Conta" na tela principal
 btn_gerenciar_conta = ctk.CTkButton(menu_frame, 
-                                    text="Gerenciar Conta", 
+                                    text="Conta", 
                                     command=mostrar_tela_gerenciar_conta, 
                                     fg_color="blue", 
                                     text_color="white", 
